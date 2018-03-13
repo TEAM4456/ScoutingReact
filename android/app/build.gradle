@@ -107,6 +107,21 @@ android {
             abiFilters "armeabi-v7a", "x86"
         }
     }
+    signingConfigs {
+        release {
+            if (project.hasProperty('SCOUTING_RELEASE_STORE_FILE')) {
+                storeFile file(SCOUTING_RELEASE_STORE_FILE)
+                storePassword SCOUTING_RELEASE_STORE_PASSWORD
+                keyAlias SCOUTING_RELEASE_KEY_ALIAS
+                keyPassword SCOUTING_RELEASE_KEY_PASSWORD
+            }
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+        }
+    }
     splits {
         abi {
             reset()
