@@ -1,0 +1,36 @@
+# Uncomment the next line to define a global platform for your project
+# platform :ios, '9.0'
+
+target 'MechCadetsScouting' do
+  # Uncomment the next line if you're using Swift or would like to use dynamic frameworks
+  # use_frameworks!
+
+  # Pods for MechCadetsScouting
+
+  target 'MechCadetsScouting-tvOSTests' do
+    inherit! :search_paths
+    # Pods for testing
+  end
+
+  target 'MechCadetsScoutingTests' do
+    inherit! :search_paths
+    # Pods for testing
+  end
+
+end
+
+target 'MechCadetsScouting-tvOS' do
+  # Uncomment the next line if you're using Swift or would like to use dynamic frameworks
+  # use_frameworks!
+
+  # Pods for MechCadetsScouting-tvOS
+
+  target 'MechCadetsScouting-tvOSTests' do
+    inherit! :search_paths
+    # Pods for testing
+  end
+
+end
+pod 'React', path: '../node_modules/react-native', subspecs: [
+  'ART',
+]
