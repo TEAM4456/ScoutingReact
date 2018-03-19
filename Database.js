@@ -22,6 +22,37 @@ const FRCteamSchema = {
         motto: {default: "", type: "string"},
     }
 }
+const PowerUpMatchSchema = {
+    name: "PowerUpMatch",
+    properties: {
+        // TEAM INFO BLOCK
+        match_number: {default: 0, type: "int"},
+        // AUTO BLOCK
+        auto_line: {default: false, type: "bool"},
+        auto_delivered_switch: {default: 0, type: "int"},
+        auto_delivered_scale: {default: 0, type: "int"},
+        auto_delivered_oppscale: {default: 0, type: "int"},
+        // MANUAL BLOCK
+        prisms_delivered_switch: {default: 0, type: "int"},
+        prisms_delivered_scale: {default: 0, type: "int"},
+        prisms_delivered_oppswitch: {default: 0, type: "int"},
+        prisms_delivered_vault: {default: 0, type: "int"},
+        prisms_failed_switch: {default: 0, type: "int"},
+        prisms_failed_scale: {default: 0, type: "int"},
+        prisms_failed_oppswitch: {default: 0, type: "int"},
+        prisms_failed_vault: {default: 0, type: "int"},
+        // OTHER BLOCK
+        notes: {default: "None", type: "string"},
+        failed_in_transit: {default: 0, type: "int"}
+    }
+}
+const PowerUpScoutSchema = {
+    name: "PowerUpScoutSchema",
+    properties: {
+        key: "string",
+        matches: "PowerUpMatch[]"
+    }
+}
 const ConfigSchema = {
     name: "Config",
     properties: {
@@ -107,6 +138,65 @@ function getTBAteam(data)
         });
         resolve(teamReturn);
     });
+}
+// Data is an object with data on the team matching the schema. All but the team key are optional.
+/* Ex: {
+    "key": "frc4456",
+    match: {
+        "match_number": 16, 
+        "auto_line": true, 
+        "auto_delivered_switch": 4456, 
+        "auto_delivered_scale": 4456, 
+        "auto_delivered_oppscale": 4456,
+        "prisms_delivered_switch": 9001,
+        "prisms_delivered_scale": 9001,
+        "prisms_delivered_oppswitch": 9001,
+        "prisms_delivered_vault": 9001,
+        "prisms_failed_switch": 0,
+        "prisms_failed_scale": 0,
+        "prisms_failed_oppswitch": 0,
+        "prisms_failed_vault": 0,
+        "notes": "Their robot scored over 9000!",
+        "failed_in_transit": 0
+    }
+}
+*/
+async function updateTeamScouting(data)
+{
+    var realm = await new Realm({schema: [PowerUpMatchSchema, PowerUpScoutSchema], path: "scouting.realm"});
+    var currentTeam = await realm.objects("PowerUpScoutSchema").filtered("key ENDSWITH "+data["key"]);
+    if(currentTeam.length == 0)
+    {
+        await realm.write(() => currentTeam.push(realm.create("PowerUpScoutSchema")));
+    }
+    currentTeam = currentTeam[0];
+    realm.write(() => {
+        currentTeam.matches.push(data["match"]);
+    });
+}
+// Data is an array of match numbers inside of a dict for a team
+// Example: {"key": "frc4456", "matches": [1, 6, 11, 16]}
+// Example response: {"error": false, matches: [{"match_number": 1, etc},...]}
+// Example failed response: {"error": true, error: "team not found"}
+async function getTeamScoutingMatches(data)
+{
+    var realm = await new Realm({schema: [PowerUpMatchSchema, PowerUpScoutSchema], path: "scouting.realm"});
+    var currentTeam = await realm.objects("PowerUpScoutSchema").filtered("key ENDSWITH "+data["key"]);
+    var returnData = {
+        "error": false,
+        "matches": []
+    }
+    if(currentTeam.length == 0)
+    {
+        return {"error":true,"error":"team not found"};
+    }
+    currentTeam.matches.forEach(match => {
+        if(data["matches"].indexOf(match["match_number"]) != -1)
+        {
+            returnData["matches"].push(data);
+        }
+    });
+    return returnData;
 }
 module.exports.writeTBAteams = writeTBAteams;
 module.exports.getTBAteam = getTBAteam;

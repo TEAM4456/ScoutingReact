@@ -158,6 +158,9 @@ export class TeamScreen extends React.Component {
               <Text style={{textAlign: "center", fontSize: 24, color: "#88F"}}>Team full name (sponsors): </Text>
               <Text style={{fontSize:12, color:"#BBB", textAlign:"center"}}>{this.state.data.name}</Text>
             </View>
+            <View style={styles.homeScreenFragment}>
+              <Button title="Scout" onPress={()=>this.props.navigation.navigate("ScoutingScreen")}/>
+            </View>
           </View>
           <View style={styles.homeScreenPart}>
             <View style={styles.homeScreenFragment}>
@@ -179,6 +182,110 @@ var syncData = async function()
   var data = await libtba.getAllTeamInfo(TBAkey);
   await db.writeTBAteams(data);
   Alert.alert("Data has been synced.");
+}
+export class Counter extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      count: 0
+    }
+  };
+  render() {
+    return (
+      <View>
+        <Button onPress={()=>{
+          this.setState({count: this.state.count+1});
+          this.props.onUpdate(this.state.count);
+        }} title={"+1"}/>
+        <TextInput editable={false} value={String(this.state.count)}/> 
+        <Button onPress={()=>{
+          this.setState({count: this.state.count-1});
+          this.props.onUpdate(this.state.count);
+        }} title={"-1"}/>
+      </View>
+    )
+  }
+}
+export class ScoutingScreen extends React.Component {
+  static navigationOptions = ({ navigation }) => {
+    const params = navigation.state.params || {};
+    return {
+      title: "Scouting for Team "+TeamSelected,
+      headerTitleStyle: {color: "#CCC"}
+    }};
+  constructor(props) {
+    super(props);
+    /*if(typeof TBAkey == "string")
+    {
+      this.state = {textBoxText: TBAkey};
+    }
+    else
+    {*/
+      this.state = {
+        autoLineCheckbox: false,
+        matchNumber: "0",
+        autoDeliveredSwitch: "0",
+        autoDeliveredScale: "0",
+        autoDeliveredOppSwitch: "0",
+      };
+    //}
+  }
+  render() {
+    return (
+      <View style={{flexDirection: "column", flex: 1}}>
+        <View style={styles.homeScreen}>
+          <View style={styles.homeScreenPart}>
+            {/*Left Side*/}
+            <View style={styles.homeScreenFragment}>
+              <Text>Match Number:</Text>
+              <TextInput value={this.state.matchNumber} onChangeText={(matchNumber) => {
+                this.setState({matchNumber});
+              }}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text style={{textAlign: "center", fontSize: 24, color: "#A44"}}>Passed the Auto Line: </Text>
+              <CheckBox value={this.state.autoLineCheckbox} onValueChange={(autoLineCheckbox) => {
+                this.setState({autoLineCheckbox})
+              }}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Cubes delivered in Auto to Switch:</Text>
+              <TextInput value={this.state.autoDeliveredSwitch} onChangeText={(autoDeliveredSwitch) => {
+                this.setState({autoDeliveredSwitch});
+              }}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Cubes delivered in Auto to Scale:</Text>
+              <TextInput value={this.state.autoDeliveredScale} onChangeText={(autoDeliveredScale) => {
+                this.setState({autoDeliveredScale});
+              }}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Cubes delivered in Auto to Opponent Switch:</Text>
+              <TextInput value={this.state.autoDeliveredOppSwitch} onChangeText={(autoDeliveredOppSwitch) => {
+                this.setState({autoDeliveredOppSwitch});
+              }}/>
+            </View>
+            <Break/>
+          </View>
+          <View style={styles.homeScreenPart}>
+            {/*Right Side*/}
+            <View style={styles.homeScreenFragment}>
+              <Button title="Go to team info for team 4456" onPress={()=>{TeamSelected = 4456; this.props.navigation.navigate("TeamScreen")}}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Button title="Go to team input screen" onPress={()=>this.props.navigation.navigate("TeamSelect")}/>
+            </View>
+          </View>
+        </View>
+      </View>
+    )
+  }
 }
 export class SettingsScreen extends React.Component {
   static navigationOptions = ({ navigation }) => {
@@ -235,6 +342,12 @@ export default StackNavigator({
       headerStyle: {backgroundColor: "#333"}
     }
   },
+  ScoutingScreen: {
+    screen: ScoutingScreen,
+    navigationOptions: {
+      headerStyle: {backgroundColor: "#333"}
+    }
+  }
 })
 const styles = StyleSheet.create({
   homeScreen: {
@@ -249,7 +362,7 @@ const styles = StyleSheet.create({
     flexDirection: "column"
   },
   homeScreenFragment: {
-    padding: 20,
+    padding: 10,
     borderRadius: 5,
     backgroundColor: "#555",
   },
