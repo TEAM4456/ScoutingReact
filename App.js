@@ -211,7 +211,7 @@ export class ScoutingScreen extends React.Component {
     const params = navigation.state.params || {};
     return {
       title: "Scouting for Team "+TeamSelected,
-      headerTitleStyle: {color: "#CCC"}
+      headerTitleStyle: {color: "#CCC"},
     }};
   constructor(props) {
     super(props);
@@ -223,10 +223,16 @@ export class ScoutingScreen extends React.Component {
     {*/
       this.state = {
         autoLineCheckbox: false,
+        climbCheckbox: false,
         matchNumber: "0",
         autoDeliveredSwitch: "0",
         autoDeliveredScale: "0",
         autoDeliveredOppSwitch: "0",
+        notes: "",
+        prismsDeliveredSwitch: "0",
+        prismsDeliveredScale: "0",
+        prismsDeliveredOppSwitch: "0",
+        prismsDeliveredVault: "0",
       };
     //}
   }
@@ -238,7 +244,7 @@ export class ScoutingScreen extends React.Component {
             {/*Left Side*/}
             <View style={styles.homeScreenFragment}>
               <Text>Match Number:</Text>
-              <TextInput value={this.state.matchNumber} onChangeText={(matchNumber) => {
+              <TextInput keyboardType='numeric' value={this.state.matchNumber} onChangeText={(matchNumber) => {
                 this.setState({matchNumber});
               }}/>
             </View>
@@ -252,22 +258,29 @@ export class ScoutingScreen extends React.Component {
             <Break/>
             <View style={styles.homeScreenFragment}>
               <Text>Cubes delivered in Auto to Switch:</Text>
-              <TextInput value={this.state.autoDeliveredSwitch} onChangeText={(autoDeliveredSwitch) => {
+              <TextInput keyboardType='numeric' value={this.state.autoDeliveredSwitch} onChangeText={(autoDeliveredSwitch) => {
                 this.setState({autoDeliveredSwitch});
               }}/>
             </View>
             <Break/>
             <View style={styles.homeScreenFragment}>
               <Text>Cubes delivered in Auto to Scale:</Text>
-              <TextInput value={this.state.autoDeliveredScale} onChangeText={(autoDeliveredScale) => {
+              <TextInput  keyboardType='numeric'value={this.state.autoDeliveredScale} onChangeText={(autoDeliveredScale) => {
                 this.setState({autoDeliveredScale});
               }}/>
             </View>
             <Break/>
             <View style={styles.homeScreenFragment}>
               <Text>Cubes delivered in Auto to Opponent Switch:</Text>
-              <TextInput value={this.state.autoDeliveredOppSwitch} onChangeText={(autoDeliveredOppSwitch) => {
+              <TextInput keyboardType='numeric' value={this.state.autoDeliveredOppSwitch} onChangeText={(autoDeliveredOppSwitch) => {
                 this.setState({autoDeliveredOppSwitch});
+              }}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Additional Notes:</Text>
+              <TextInput value={this.state.notes} onChangeText={(notes) => {
+                this.setState({notes});
               }}/>
             </View>
             <Break/>
@@ -275,12 +288,66 @@ export class ScoutingScreen extends React.Component {
           <View style={styles.homeScreenPart}>
             {/*Right Side*/}
             <View style={styles.homeScreenFragment}>
-              <Button title="Go to team info for team 4456" onPress={()=>{TeamSelected = 4456; this.props.navigation.navigate("TeamScreen")}}/>
+              <Text style={{textAlign: "center", fontSize: 24, color: "#A44"}}>Did Climb: </Text>
+              <CheckBox value={this.state.climbCheckbox} onValueChange={(climbCheckbox) => {
+                this.setState({climbCheckbox})
+              }}/>
             </View>
             <Break/>
             <View style={styles.homeScreenFragment}>
-              <Button title="Go to team input screen" onPress={()=>this.props.navigation.navigate("TeamSelect")}/>
+              <Button title="Save Data" onPress={() => {
+                var consoleData = {
+                  "key": "frc"+TeamSelected,
+                  match: {
+                    "match_number": Number(this.state.matchNumber), 
+                    "auto_line": this.state.autoLineCheckbox, 
+                    "auto_delivered_switch": Number(this.state.autoDeliveredSwitch), 
+                    "auto_delivered_scale": Number(this.state.autoDeliveredScale), 
+                    "auto_delivered_oppswitch": Number(this.state.autoDeliveredOppSwitch),
+                    "prisms_delivered_switch": Number(this.state.prismsDeliveredSwitch),
+                    "prisms_delivered_scale": Number(this.state.prismsDeliveredScale),
+                    "prisms_delivered_oppswitch": Number(this.state.prismsDeliveredOppSwitch),
+                    "prisms_delivered_vault": Number(this.state.prismsDeliveredVault),
+                    "prisms_failed_switch": 0,
+                    "prisms_failed_scale": 0,
+                    "prisms_failed_oppswitch": 0,
+                    "prisms_failed_vault": 0,
+                    "notes": this.state.notes,
+                    "failed_in_transit": 0
+                }
+              }
+              db.updateTeamScouting(consoleData);
+              }}/>
             </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Cubes delivered to Switch:</Text>
+              <TextInput keyboardType='numeric' value={this.state.prismsDeliveredSwitch} onChangeText={(prismsDeliveredSwitch) => {
+                this.setState({prismsDeliveredSwitch});
+              }}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Cubes delivered to Scale:</Text>
+              <TextInput keyboardType='numeric' value={this.state.prismsDeliveredScale} onChangeText={(prismsDeliveredScale) => {
+                this.setState({prismsDeliveredScale});
+              }}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Cubes delivered to Opponent Switch:</Text>
+              <TextInput keyboardType='numeric' value={this.state.prismsDeliveredOppSwitch} onChangeText={(prismsDeliveredOppSwitch) => {
+                this.setState({prismsDeliveredOppSwitch});
+              }}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Cubes delivered to Vault:</Text>
+              <TextInput keyboardType='numeric' value={this.state.prismsDeliveredVault} onChangeText={(prismsDeliveredVault) => {
+                this.setState({prismsDeliveredVault});
+              }}/>
+            </View>
+            <Break/>
           </View>
         </View>
       </View>

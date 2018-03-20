@@ -31,7 +31,7 @@ const PowerUpMatchSchema = {
         auto_line: {default: false, type: "bool"},
         auto_delivered_switch: {default: 0, type: "int"},
         auto_delivered_scale: {default: 0, type: "int"},
-        auto_delivered_oppscale: {default: 0, type: "int"},
+        auto_delivered_oppswitch: {default: 0, type: "int"},
         // MANUAL BLOCK
         prisms_delivered_switch: {default: 0, type: "int"},
         prisms_delivered_scale: {default: 0, type: "int"},
@@ -147,7 +147,7 @@ function getTBAteam(data)
         "auto_line": true, 
         "auto_delivered_switch": 4456, 
         "auto_delivered_scale": 4456, 
-        "auto_delivered_oppscale": 4456,
+        "auto_delivered_oppswitch": 4456,
         "prisms_delivered_switch": 9001,
         "prisms_delivered_scale": 9001,
         "prisms_delivered_oppswitch": 9001,
@@ -164,18 +164,21 @@ function getTBAteam(data)
 async function updateTeamScouting(data)
 {
     var realm = await new Realm({schema: [PowerUpMatchSchema, PowerUpScoutSchema], path: "scouting.realm"});
-    var currentTeam = await realm.objects("PowerUpScoutSchema").filtered("key ENDSWITH "+data["key"]);
+    var currentTeam = await realm.objects("PowerUpScoutSchema").filtered("key BEGINSWITH \""+data["key"]+"\"");
     if(currentTeam.length == 0)
     {
-        await realm.write(() => currentTeam.push(realm.create("PowerUpScoutSchema")));
+        await realm.write(() => currentTeam = realm.create("PowerUpScoutSchema", {
+            "key": "frc"+data["key"],
+            "matches": []
+        }));
     }
-    currentTeam = currentTeam[0];
+    // currentTeam = currentTeam[0];
     realm.write(() => {
         currentTeam.matches.push(data["match"]);
     });
 }
-// Data is an array of match numbers inside of a dict for a team
-// Example: {"key": "frc4456", "matches": [1, 6, 11, 16]}
+// Data is an array of match numbers inside of a dict for a team, or string "all"
+// Example: {"key": "frc4456", "matches": [1, 6, 11, 16], key: "frc0", "matches": "all"}
 // Example response: {"error": false, matches: [{"match_number": 1, etc},...]}
 // Example failed response: {"error": true, error: "team not found"}
 async function getTeamScoutingMatches(data)
@@ -190,6 +193,10 @@ async function getTeamScoutingMatches(data)
     {
         return {"error":true,"error":"team not found"};
     }
+    if(data["matches"] === "all")
+    {
+        return {"error": false, "data": currentTeam.matches};
+    }
     currentTeam.matches.forEach(match => {
         if(data["matches"].indexOf(match["match_number"]) != -1)
         {
@@ -202,3 +209,5 @@ module.exports.writeTBAteams = writeTBAteams;
 module.exports.getTBAteam = getTBAteam;
 module.exports.readConfig = readConfig;
 module.exports.updateConfig = updateConfig;
+module.exports.updateTeamScouting = updateTeamScouting;
+module.exports.getTeamScoutingMatches = getTeamScoutingMatches;
