@@ -168,14 +168,31 @@ async function updateTeamScouting(data)
     if(currentTeam.length == 0)
     {
         await realm.write(() => currentTeam = realm.create("PowerUpScoutSchema", {
-            "key": "frc"+data["key"],
+            "key": data["key"],
             "matches": []
         }));
     }
+    if(currentTeam["0"]) {
+        currentTeam = currentTeam["0"];
+    }
+    var matches = currentTeam.matches
+    //Duplicate match checking does not work yet
+    if(getObjectValues(matches).length > 0)
+    {
+        getObjectValues(matches).forEach(match => {
+            if(Number(match["match_number"]) == Number(data["match"]["match_number"])) {
+                return {"error":true,"message": "Duplicate Match"};
+            }
+            else {
+            }
+        })
+    }
     // currentTeam = currentTeam[0];
     realm.write(() => {
-        currentTeam.matches.push(data["match"]);
+        //currentTeam.matches.push(data["match"]);
+        matches.push(data["match"]);
     });
+    return {"error":false}
 }
 // Data is an array of match numbers inside of a dict for a team, or string "all"
 // Example: {"key": "frc4456", "matches": [1, 6, 11, 16], key: "frc0", "matches": "all"}
@@ -184,7 +201,11 @@ async function updateTeamScouting(data)
 async function getTeamScoutingMatches(data)
 {
     var realm = await new Realm({schema: [PowerUpMatchSchema, PowerUpScoutSchema], path: "scouting.realm"});
-    var currentTeam = await realm.objects("PowerUpScoutSchema").filtered("key ENDSWITH "+data["key"]);
+    var currentTeam = await realm.objects("PowerUpScoutSchema").filtered("key ENDSWITH \""+data["key"]+"\"");
+    if(currentTeam["0"])
+    {
+        currentTeam = currentTeam["0"];
+    }
     var returnData = {
         "error": false,
         "matches": []
@@ -195,7 +216,7 @@ async function getTeamScoutingMatches(data)
     }
     if(data["matches"] === "all")
     {
-        return {"error": false, "data": currentTeam.matches};
+        return {"error": false, "data": getObjectValues(currentTeam.matches)};
     }
     currentTeam.matches.forEach(match => {
         if(data["matches"].indexOf(match["match_number"]) != -1)
@@ -204,6 +225,12 @@ async function getTeamScoutingMatches(data)
         }
     });
     return returnData;
+}
+function getObjectValues(data)
+{
+    var val = [];
+    Object.keys(data).forEach((obj) => val.push(data[obj]));
+    return val;
 }
 module.exports.writeTBAteams = writeTBAteams;
 module.exports.getTBAteam = getTBAteam;

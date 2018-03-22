@@ -5,10 +5,10 @@ import _ from 'underscore';
 import db from './Database.js';
 import libtba from './libtba.js';
 import config from './Config.js';
-import * as Progress from "react-native-progress";
 const TBAkey = "aTiwtPGZpYPzhNxms49oT1tcMDBBklLkkdiolDgF75N4JqeUmkuefTz6jrQgoqBU";
 const UserAgent = "4456Scouting/ 1.0";
 var TeamSelected = 4456;
+import Counter from './Counter.js';
 export class TeamSelect extends React.Component {
   static navigationOptions = ({ navigation }) => {
     const params = navigation.state.params || {};
@@ -94,6 +94,50 @@ export class Break extends React.Component {
     )
   }
 }
+export class DataScreen extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      isLoading: true,
+      data: {},
+      componentData: []
+    }
+  }
+  componentWillMount() {
+    db.getTeamScoutingMatches({"key": "frc"+TeamSelected, "matches":"all"})
+    .then((datanew) => {
+      datanew["data"].forEach((datum, i) => {
+        datum.key = String(i + 1);
+      });
+      this.setState({data: datanew["data"], isLoading: false});
+    });
+  }
+  render() {
+    if(this.state.isLoading) {
+      return (
+        <Text>Loading...</Text>
+      )
+    }
+    return (
+      <View style={{flexDirection: "column", flex: 1}}>
+        <View style={styles.homeScreen}>
+          <View style={styles.homeScreenPart}>
+            <FlatList 
+            data={this.state.data}
+            renderItem={({item}) => {
+              <View style={styles.homeScreenFragment}>
+                <View style={{flexDirection: "row"}}>
+                  <Text style={{flex: 1, fontSize: 24, color: "#fff"}}>{item.match_number}</Text>
+                  <Button style={{flex: 5}} title="Go" onPress={()=>this.props.navigation.navigate("ScoutingScreen")}/>
+                </View>
+              </View>
+            }}/>
+          </View>
+        </View>
+      </View>
+    )
+  }
+}
 export class TeamScreen extends React.Component {
   static navigationOptions = ({ navigation }) => {
     const params = navigation.state.params || {};
@@ -158,6 +202,7 @@ export class TeamScreen extends React.Component {
               <Text style={{textAlign: "center", fontSize: 24, color: "#88F"}}>Team full name (sponsors): </Text>
               <Text style={{fontSize:12, color:"#BBB", textAlign:"center"}}>{this.state.data.name}</Text>
             </View>
+            <Break/>
             <View style={styles.homeScreenFragment}>
               <Button title="Scout" onPress={()=>this.props.navigation.navigate("ScoutingScreen")}/>
             </View>
@@ -169,6 +214,10 @@ export class TeamScreen extends React.Component {
             <Break/>
             <View style={styles.homeScreenFragment}>
               <Text style={{textAlign: "center", fontSize: 24, color: "#88F"}}>Rookie year: {this.state.data.rookie_year}</Text>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Button title="View Data" onPress={()=>this.props.navigation.navigate("DataScreen")}/>
             </View>
           </View>
         </View>
@@ -182,29 +231,6 @@ var syncData = async function()
   var data = await libtba.getAllTeamInfo(TBAkey);
   await db.writeTBAteams(data);
   Alert.alert("Data has been synced.");
-}
-export class Counter extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      count: 0
-    }
-  };
-  render() {
-    return (
-      <View>
-        <Button onPress={()=>{
-          this.setState({count: this.state.count+1});
-          this.props.onUpdate(this.state.count);
-        }} title={"+1"}/>
-        <TextInput editable={false} value={String(this.state.count)}/> 
-        <Button onPress={()=>{
-          this.setState({count: this.state.count-1});
-          this.props.onUpdate(this.state.count);
-        }} title={"-1"}/>
-      </View>
-    )
-  }
 }
 export class ScoutingScreen extends React.Component {
   static navigationOptions = ({ navigation }) => {
@@ -233,6 +259,12 @@ export class ScoutingScreen extends React.Component {
         prismsDeliveredScale: "0",
         prismsDeliveredOppSwitch: "0",
         prismsDeliveredVault: "0",
+        prismsFailedSwitch: "0",
+        prismsFailedScale: "0",
+        prismsFailedOppSwitch: "0",
+        prismsFailedVault: "0",
+        prismsFailedInTransit: "0",
+        piggyBackCheckbox: false
       };
     //}
   }
@@ -243,13 +275,6 @@ export class ScoutingScreen extends React.Component {
           <View style={styles.homeScreenPart}>
             {/*Left Side*/}
             <View style={styles.homeScreenFragment}>
-              <Text>Match Number:</Text>
-              <TextInput keyboardType='numeric' value={this.state.matchNumber} onChangeText={(matchNumber) => {
-                this.setState({matchNumber});
-              }}/>
-            </View>
-            <Break/>
-            <View style={styles.homeScreenFragment}>
               <Text style={{textAlign: "center", fontSize: 24, color: "#A44"}}>Passed the Auto Line: </Text>
               <CheckBox value={this.state.autoLineCheckbox} onValueChange={(autoLineCheckbox) => {
                 this.setState({autoLineCheckbox})
@@ -257,24 +282,25 @@ export class ScoutingScreen extends React.Component {
             </View>
             <Break/>
             <View style={styles.homeScreenFragment}>
-              <Text>Cubes delivered in Auto to Switch:</Text>
-              <TextInput keyboardType='numeric' value={this.state.autoDeliveredSwitch} onChangeText={(autoDeliveredSwitch) => {
-                this.setState({autoDeliveredSwitch});
+              <Text>Match Number:</Text>
+              <TextInput keyboardType='numeric' value={this.state.matchNumber} onChangeText={(matchNumber) => {
+                this.setState({matchNumber});
               }}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Cubes delivered in Auto to Switch:</Text>
+              <Counter onChange={(newCount) => this.setState({autoDeliveredSwitch: newCount})}/>
             </View>
             <Break/>
             <View style={styles.homeScreenFragment}>
               <Text>Cubes delivered in Auto to Scale:</Text>
-              <TextInput  keyboardType='numeric'value={this.state.autoDeliveredScale} onChangeText={(autoDeliveredScale) => {
-                this.setState({autoDeliveredScale});
-              }}/>
+              <Counter onChange={(newCount) => this.setState({autoDeliveredScale: newCount})}/>
             </View>
             <Break/>
             <View style={styles.homeScreenFragment}>
               <Text>Cubes delivered in Auto to Opponent Switch:</Text>
-              <TextInput keyboardType='numeric' value={this.state.autoDeliveredOppSwitch} onChangeText={(autoDeliveredOppSwitch) => {
-                this.setState({autoDeliveredOppSwitch});
-              }}/>
+              <Counter onChange={(newCount) => this.setState({autoDeliveredOppSwitch: newCount})}/>
             </View>
             <Break/>
             <View style={styles.homeScreenFragment}>
@@ -286,7 +312,7 @@ export class ScoutingScreen extends React.Component {
             <Break/>
           </View>
           <View style={styles.homeScreenPart}>
-            {/*Right Side*/}
+            {/*Middle Side*/}
             <View style={styles.homeScreenFragment}>
               <Text style={{textAlign: "center", fontSize: 24, color: "#A44"}}>Did Climb: </Text>
               <CheckBox value={this.state.climbCheckbox} onValueChange={(climbCheckbox) => {
@@ -308,44 +334,77 @@ export class ScoutingScreen extends React.Component {
                     "prisms_delivered_scale": Number(this.state.prismsDeliveredScale),
                     "prisms_delivered_oppswitch": Number(this.state.prismsDeliveredOppSwitch),
                     "prisms_delivered_vault": Number(this.state.prismsDeliveredVault),
-                    "prisms_failed_switch": 0,
-                    "prisms_failed_scale": 0,
-                    "prisms_failed_oppswitch": 0,
-                    "prisms_failed_vault": 0,
+                    "prisms_failed_switch": Number(this.state.prismsFailedSwitch),
+                    "prisms_failed_scale": Number(this.state.prismsFailedScale),
+                    "prisms_failed_oppswitch": Number(this.state.prismsFailedOppSwitch),
+                    "prisms_failed_vault": Number(this.state.prismsFailedVault),
                     "notes": this.state.notes,
                     "failed_in_transit": 0
                 }
               }
-              db.updateTeamScouting(consoleData);
+              async function process(data) {
+                var response = await db.updateTeamScouting(data);
+                if(response["error"] == true) {
+                  Alert.alert("Error saving data: "+response["message"]);
+                }
+              }
+              process(consoleData);
               }}/>
             </View>
             <Break/>
             <View style={styles.homeScreenFragment}>
               <Text>Cubes delivered to Switch:</Text>
-              <TextInput keyboardType='numeric' value={this.state.prismsDeliveredSwitch} onChangeText={(prismsDeliveredSwitch) => {
-                this.setState({prismsDeliveredSwitch});
-              }}/>
+              <Counter onChange={(newCount) => this.setState({prismsDeliveredSwitch: newCount})}/>
             </View>
             <Break/>
             <View style={styles.homeScreenFragment}>
               <Text>Cubes delivered to Scale:</Text>
-              <TextInput keyboardType='numeric' value={this.state.prismsDeliveredScale} onChangeText={(prismsDeliveredScale) => {
-                this.setState({prismsDeliveredScale});
-              }}/>
+              <Counter onChange={(newCount) => this.setState({prismsDeliveredScale: newCount})}/>
             </View>
             <Break/>
             <View style={styles.homeScreenFragment}>
               <Text>Cubes delivered to Opponent Switch:</Text>
-              <TextInput keyboardType='numeric' value={this.state.prismsDeliveredOppSwitch} onChangeText={(prismsDeliveredOppSwitch) => {
-                this.setState({prismsDeliveredOppSwitch});
-              }}/>
+              <Counter onChange={(newCount) => this.setState({prismsDeliveredOppSwitch: newCount})}/>
             </View>
             <Break/>
             <View style={styles.homeScreenFragment}>
               <Text>Cubes delivered to Vault:</Text>
-              <TextInput keyboardType='numeric' value={this.state.prismsDeliveredVault} onChangeText={(prismsDeliveredVault) => {
-                this.setState({prismsDeliveredVault});
+              <Counter onChange={(newCount) => this.setState({prismsDeliveredVault: newCount})}/>
+            </View>
+            <Break/>
+          </View>
+          <View style={styles.homeScreenPart}>
+            {/*Right Side*/}
+            <View style={styles.homeScreenFragment}>
+              <Text style={{textAlign: "center", fontSize: 24, color: "#A44"}}>Did Piggyback: </Text>
+              <CheckBox value={this.state.piggyBackCheckbox} onValueChange={(piggyBackCheckbox) => {
+                this.setState({piggyBackCheckbox})
               }}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Cubes failed to Switch:</Text>
+              <Counter onChange={(newCount) => this.setState({prismsFailedSwitch: newCount})}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Cubes failed to Scale:</Text>
+              <Counter onChange={(newCount) => this.setState({prismsFailedScale: newCount})}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Cubes failed to Opponent Switch:</Text>
+              <Counter onChange={(newCount) => this.setState({prismsFailedOppSwitch: newCount})}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Cubes failed to Vault:</Text>
+              <Counter onChange={(newCount) => this.setState({prismsFailedVault: newCount})}/>
+            </View>
+            <Break/>
+            <View style={styles.homeScreenFragment}>
+              <Text>Cubes failed in Transit:</Text>
+              <Counter onChange={(newCount) => this.setState({prismsFailedInTransit: newCount})}/>
             </View>
             <Break/>
           </View>
@@ -387,6 +446,12 @@ export class SettingsScreen extends React.Component {
 export default StackNavigator({
   Home: {
     screen: HomeScreen,
+    navigationOptions: {
+      headerStyle: {backgroundColor: "#333"}
+    }
+  },
+  DataScreen: {
+    screen: DataScreen,
     navigationOptions: {
       headerStyle: {backgroundColor: "#333"}
     }
