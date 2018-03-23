@@ -27,6 +27,9 @@ const PowerUpMatchSchema = {
     properties: {
         // TEAM INFO BLOCK
         match_number: {default: 0, type: "int"},
+        // CHECKBOX BLOCK
+        did_climb: {default: false, type: "bool"},
+        did_piggyback: {default: false, type: "bool"},
         // AUTO BLOCK
         auto_line: {default: false, type: "bool"},
         auto_delivered_switch: {default: 0, type: "int"},
@@ -157,7 +160,9 @@ function getTBAteam(data)
         "prisms_failed_oppswitch": 0,
         "prisms_failed_vault": 0,
         "notes": "Their robot scored over 9000!",
-        "failed_in_transit": 0
+        "failed_in_transit": 0,
+        "did_climb": true,
+        "did_piggyback": true,
     }
 }
 */
@@ -182,8 +187,6 @@ async function updateTeamScouting(data)
         getObjectValues(matches).forEach(match => {
             if(Number(match["match_number"]) == Number(data["match"]["match_number"])) {
                 return {"error":true,"message": "Duplicate Match"};
-            }
-            else {
             }
         })
     }
@@ -218,13 +221,18 @@ async function getTeamScoutingMatches(data)
     {
         return {"error": false, "data": getObjectValues(currentTeam.matches)};
     }
-    currentTeam.matches.forEach(match => {
+    getObjectValues(currentTeam.matches).forEach(match => {
         if(data["matches"].indexOf(match["match_number"]) != -1)
         {
-            returnData["matches"].push(data);
+            returnData["matches"].push(match);
         }
     });
     return returnData;
+}
+async function getAllScouting()
+{
+    var realm = await new Realm({schema: [PowerUpMatchSchema, PowerUpScoutSchema], path: "scouting.realm"});
+    return realm.objects("PowerUpScoutSchema");
 }
 function getObjectValues(data)
 {
@@ -238,3 +246,4 @@ module.exports.readConfig = readConfig;
 module.exports.updateConfig = updateConfig;
 module.exports.updateTeamScouting = updateTeamScouting;
 module.exports.getTeamScoutingMatches = getTeamScoutingMatches;
+module.exports.getAllScouting = getAllScouting
